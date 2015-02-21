@@ -1,8 +1,8 @@
 library(caret)
 library(randomForest)
 
-setwd("D:/Userfiles/dfernandezcanon/Desktop/ML")
-#setwd("/Users/dfernandezcanon/Documents/Development/R/Project/08-Practica_Machine_Learning/Project")
+#setwd("D:/Userfiles/dfernandezcanon/Desktop/ML")
+setwd("/Users/dfernandezcanon/Documents/Development/R/Project/08-Practica_Machine_Learning/Project")
 
 #getting the data
 train.url <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -11,7 +11,7 @@ download.file(train.url, destfile = "./data/pml-training.csv", method = "curl")
 download.file(test.url, destfile = "./data/pml-testing.csv", method = "curl")
 
 
-#creating tables for the data
+#creating data frame for the data
 training.data <- read.table("./data/pml-training.csv",sep=",",na.strings = c("NA",""),header=TRUE)
 testing.data <- read.table("./data/pml-testing.csv",sep=",",na.strings = c("NA",""),header=TRUE)
 
@@ -47,15 +47,15 @@ table(pred,validation$classe)
 
 #predicting cases using testing data
 
-answers <- predict(random.forest, testing.data)
-answers
+#answers <- predict(random.forest, testing.data)
+#answers
 
-pml_write_files = function(x){
-  n = length(x)
-  for(i in 1:n){
-    filename = paste0("problem_id_",i,".txt")
-    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
-  }
-}
+#pml_write_files = function(x){
+#  n = length(x)
+#  for(i in 1:n){
+#    filename = paste0("problem_id_",i,".txt")
+#    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+#  }
+#}
 
-pml_write_files(answers)
+#pml_write_files(answers)

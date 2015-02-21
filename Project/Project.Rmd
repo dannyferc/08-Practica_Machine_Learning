@@ -1,0 +1,119 @@
+---
+title: "Practical Machine Learning project"
+author: "Daniel Fernandez"
+---
+
+##Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.We want to predict the manner in which they did the exercise.
+
+##Loading libraries
+
+Before starting to work with the data we need to load the libraries that we are going to use during the project. For this study we are going to use two libraries:
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(caret)
+library(randomForest)
+```
+
+##Data loading and transformation
+
+The data for this project come from [Human Activity Recognition programme](http://groupware.les.inf.puc-rio.br/har) at [Groupware](http://groupware.les.inf.puc-rio.br/har).
+
+We have downloaded the data and creating two data frames, one for each file.
+
+```{r, cache=TRUE}
+train.url <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+test.url <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(train.url, destfile = "./data/pml-training.csv", method = "curl")
+download.file(test.url, destfile = "./data/pml-testing.csv", method = "curl")
+```
+
+```{r}
+training.data <- read.table("./data/pml-training.csv",sep=",",na.strings = c("NA",""),header=TRUE)
+testing.data <- read.table("./data/pml-testing.csv",sep=",",na.strings = c("NA",""),header=TRUE)
+```
+
+After evaluating the data, we can see that there are a lot of columns that contains NAs, as they are not useful we can delete them. There are also some columns that contains description for the study as user_name or timestamp. We can also delete them as they are not interesting when building our machine learning model.
+
+We apply the same cleaning process for training and testing data:
+
+```{r}
+training.data <- training.data[, colSums(is.na(training.data)) == 0]
+testing.data <- testing.data[, colSums(is.na(testing.data)) == 0]
+```
+
+```{r}
+training.remove <- grepl("^X|user|timestamp|window", names(training.data))
+training.data <- training.data[, !training.remove]
+testing.remove <- grepl("^X|user|timestamp|window", names(testing.data))
+testing.data <- testing.data[, !testing.remove]
+```
+
+One important aspect is to set the seed to make our project reproducible.
+```{r}
+set.seed(647)
+```
+
+Finally, we slide the data for model testing propose, we are going to use the 70% to train our model and the remaining 30% for crossvalidation.
+
+```{r}
+inTrain <- createDataPartition(training.data$classe, p=0.70, list=FALSE)
+training <- training.data[inTrain,]
+validation <- training.data[-inTrain,]
+```
+
+##Creating the model
+
+We use a randon forest to predict the classification. Accoding to wikipedia: "Random forest method operates by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes of the individual trees."
+
+We fit the model with the training class as outcome and all the other variables as predictors.
+
+```{r}
+random.forest <- randomForest(classe ~ ., data=training, method="rf")
+```
+
+##Results
+
+After random forest is applied, we can check the results:
+
+```{r}
+random.forest
+```
+
+We see that the OOB estimate of error rate is 0.55%. As we consider it as acceptable we can continue our project predicting some values using our remaning validation data from the training data frame: 
+
+```{r}
+pred <- predict(random.forest, validation)
+confusionMatrix(validation$classe, pred)
+```
+
+The Kappa statistic of 0.9933 reflects the out of sample error.
+
+Finally, we create a table comparing the predicted results with the right results:
+```{r}
+validation$predRight <- pred==validation$classe
+table(pred,validation$classe)
+```
+
+##Predicting cases
+
+The closing step is to predict results using our random forest model and the testing data set.
+```{r}
+answers <- predict(random.forest, testing.data)
+answers
+```
+
+And we create files for submitting the project.
+```{r`, eval=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+``
+
+pml_write_files(answers)
+```
